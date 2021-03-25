@@ -36,6 +36,7 @@ class VkApiUser:
             real_count = response.json()['response']['count']
             print(f'В выбранном альбоме {real_count} фотографий')
             sizes_dict = {}
+            urls_dict = {}
             if photos_count <= real_count:
                 while getphotos_params['offset'] <= photos_count - 1:
                     for items in response.json()['response']['items']:
@@ -44,23 +45,30 @@ class VkApiUser:
                                 items['likes']['count']) + ' ' + str(datetime.datetime.fromtimestamp(items['date'])) + '.jpg' not in sizes_dict:
                             height = 0
                             max_size_type = ''
+                            max_size_url = ''
                             for size in items['sizes']:
                                 if height < size['height']:
                                     height = size['height']
                                     max_size_type = size['type']
+                                    max_size_url = size['url']
                             sizes_dict[str(items['likes']['count']) + '.jpg'] = max_size_type
+                            urls_dict[str(items['likes']['count']) + '.jpg'] = max_size_url
                         elif str(items['likes']['count']) + '.jpg' in sizes_dict:
                             height = 0
                             max_size_type = ''
+                            max_size_url = ''
                             for size in items['sizes']:
                                 if height < size['height']:
                                     height = size['height']
                                     max_size_type = size['type']
+                                    max_size_url = size['url']
                             sizes_dict[str(items['likes']['count']) + ' ' + str(datetime.datetime.fromtimestamp(items['date'])) + '.jpg'] = max_size_type
+                            urls_dict[str(items['likes']['count']) + ' ' + str(datetime.datetime.fromtimestamp(items['date'])) + '.jpg'] = max_size_url
                     getphotos_params['offset'] += 1
                     response = requests.get(getphotos_url, params={**self.params, **getphotos_params})
             else:
                 print('Вы хотите сохранить больше фотографий, чем есть в альбоме!')
             print(sizes_dict)
+            print(urls_dict)
         else:
             print('Ошибка!')
