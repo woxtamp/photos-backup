@@ -32,7 +32,7 @@ class VkApiUser:
             'count': 1
         }
         response = requests.get(getphotos_url, params={**self.params, **getphotos_params})
-        if response.status_code == 200:
+        if response.status_code == 200 and 'error' not in response.json():
             real_count = response.json()['response']['count']
             print(f'В выбранном альбоме {real_count} фотографий')
             sizes_dict = {}
@@ -47,7 +47,10 @@ class VkApiUser:
                             max_size_type = ''
                             max_size_url = ''
                             for size in items['sizes']:
-                                if height < size['height']:
+                                if size['height'] == 0:
+                                    max_size_type = size['type']
+                                    max_size_url = size['url']
+                                elif height < size['height']:
                                     height = size['height']
                                     max_size_type = size['type']
                                     max_size_url = size['url']
@@ -58,6 +61,9 @@ class VkApiUser:
                             max_size_type = ''
                             max_size_url = ''
                             for size in items['sizes']:
+                                if size['height'] == 0:
+                                    max_size_type = size['type']
+                                    max_size_url = size['url']
                                 if height < size['height']:
                                     height = size['height']
                                     max_size_type = size['type']
@@ -70,5 +76,7 @@ class VkApiUser:
                 print('Вы хотите сохранить больше фотографий, чем есть в альбоме!')
             print(sizes_dict)
             print(urls_dict)
+        elif 'error' in response.json():
+            print(f'Ошибка! {response.json()["error"]["error_msg"]}! Код ошибки: {response.json()["error"]["error_code"]}.')
         else:
-            print('Ошибка!')
+            print('Произошла ошибка! Попробуйте ещё раз!')
