@@ -1,7 +1,10 @@
+import sys
 import requests
 import time
 import datetime
 import json
+from tqdm import tqdm
+
 
 
 class VkApiUser:
@@ -19,6 +22,42 @@ class VkApiUser:
             'access_token': self.token,
             'v': self.version
         }
+
+    def get_albums(self, owner_id):
+        getalbums_url = self.url + 'photos.getAlbums'
+        getalbums_params = {
+            'owner_id': owner_id,
+            'need_system': 1
+        }
+        albums_ids = []
+        albums_select_number = []
+        albums_select_name = []
+        count = 0
+        response = requests.get(getalbums_url, params={**self.params, **getalbums_params})
+        if response.status_code == 200 and 'error' not in response.json():
+            for items in response.json()['response']['items']:
+                count += 1
+                albums_ids.append(items['id'])
+                albums_select_number.append(count)
+                albums_select_name.append(items['title'])
+            print('Введите цифру соответствующую номеру альбома из которого нужно сохранить фотографии')
+            for album in albums_select_number:
+                print(f'{album} - "{albums_select_name[albums_select_number.index(album)]}"')
+            album_number = input()
+            if album_number.isdecimal():
+                if int(album_number) in albums_select_number:
+                    return albums_ids[int(album_number) - 1]
+                else:
+                    print('Вы ввели номер несуществующего альбома!')
+            else:
+                print('Ошибка! Введено не число')
+        elif 'error' in response.json():
+            print(f'Ошибка! {response.json()["error"]["error_msg"]}! Код ошибки: {response.json()["error"]["error_code"]}.')
+            print('Будет выбран альбом "Фотографии со страницы".')
+            return 'profile'
+        else:
+            print('Произошла ошибка! Попробуйте ещё раз!')
+            sys.exit()
 
     def get_photos(self, owner_id, album_id, photos_count=5):
         getphotos_url = self.url + 'photos.get'
@@ -38,11 +77,14 @@ class VkApiUser:
             sizes_dict = {}
             urls_dict = {}
             output_data = []
+            if real_count == 0:
+                print('Ошибка! В выбранном альбоме нет фотографий, сохранять нечего! Попробуйте выбрать другой альбом.')
+                sys.exit()
             if photos_count >= real_count:
-                print(f'Вы хотите сохранить больше фотографий, чем есть в альбоме {album_id}. Будет сохранено только {real_count} фото.')
+                print(f'Вы хотите сохранить больше фотографий, чем есть в альбоме. Будет сохранено только {real_count} фото.')
                 photos_count = real_count
             while getphotos_params['offset'] <= photos_count - 1:
-                for items in response.json()['response']['items']:
+                for items in tqdm(response.json()['response']['items']):
                     time.sleep(0.33)
                     if str(items['likes']['count']) + '.jpg' not in sizes_dict and str(
                             items['likes']['count']) + ' ' + str(datetime.datetime.fromtimestamp(items['date'])) + '.jpg' not in sizes_dict:
