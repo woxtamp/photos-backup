@@ -1,7 +1,7 @@
-import datetime
-import time
-
 import requests
+import time
+import datetime
+import json
 
 
 class VkApiUser:
@@ -37,6 +37,7 @@ class VkApiUser:
             print(f'В выбранном альбоме {real_count} фотографий')
             sizes_dict = {}
             urls_dict = {}
+            output_data = []
             if photos_count <= real_count:
                 while getphotos_params['offset'] <= photos_count - 1:
                     for items in response.json()['response']['items']:
@@ -76,6 +77,14 @@ class VkApiUser:
                 print('Вы хотите сохранить больше фотографий, чем есть в альбоме!')
             print(sizes_dict)
             print(urls_dict)
+            output_dict = {}
+            with open('output.json', 'w') as file:
+                for item in sizes_dict:
+                    output_dict['file_name'] = item
+                    output_dict['size'] = sizes_dict[item]
+                    output_data.append(output_dict)
+                    output_dict = {}
+                json.dump(output_data, file, ensure_ascii=False, indent=2)
         elif 'error' in response.json():
             print(f'Ошибка! {response.json()["error"]["error_msg"]}! Код ошибки: {response.json()["error"]["error_code"]}.')
         else:
