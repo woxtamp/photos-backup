@@ -13,10 +13,12 @@ class VkApiUser:
         self.token = token
         if self.token == '':
             print('Ошибка! Не указан токен Вконтакте!')
+            sys.exit()
 
         self.version = version
         if self.version == '':
             print('Ошибка! Не указана версия API Вконтакте!')
+            sys.exit()
         self.params = {
             'access_token': self.token,
             'v': self.version
@@ -96,8 +98,8 @@ class VkApiUser:
                 for items in tqdm(response.json()['response']['items']):
                     time.sleep(0.33)
                     if str(items['likes']['count']) + '.jpg' not in sizes_dict and str(
-                            items['likes']['count']) + (' ' + str(datetime.datetime.fromtimestamp(items['date'])) +
-                                                        '.jpg' not in sizes_dict):
+                            items['likes']['count']) + ' ' + str(datetime.datetime.fromtimestamp(
+                                items['date'])).replace(':', '-') + '.jpg' not in sizes_dict:
                         height = 0
                         max_size_type = ''
                         max_size_url = ''
@@ -124,9 +126,9 @@ class VkApiUser:
                                 max_size_type = size['type']
                                 max_size_url = size['url']
                         sizes_dict[str(items['likes']['count']) + ' ' + str(
-                            datetime.datetime.fromtimestamp(items['date'])) + '.jpg'] = max_size_type
+                            datetime.datetime.fromtimestamp(items['date'])).replace(':', '-') + '.jpg'] = max_size_type
                         urls_dict[str(items['likes']['count']) + ' ' + str(
-                            datetime.datetime.fromtimestamp(items['date'])) + '.jpg'] = max_size_url
+                            datetime.datetime.fromtimestamp(items['date'])).replace(':', '-') + '.jpg'] = max_size_url
                 getphotos_params['offset'] += 1
                 response = requests.get(getphotos_url, params={**self.params, **getphotos_params})
             output_dict = {}
@@ -139,9 +141,12 @@ class VkApiUser:
                     output_data.append(output_dict)
                     output_dict = {}
                 json.dump(output_data, file, ensure_ascii=False, indent=2)
+            return urls_dict
         elif 'error' in response.json():
             print(
                 f'Ошибка! {response.json()["error"]["error_msg"]}! Код ошибки: '
                 f'{response.json()["error"]["error_code"]}.')
+            sys.exit()
         else:
             print('Произошла ошибка! Попробуйте ещё раз!')
+            sys.exit()
